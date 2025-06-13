@@ -56,6 +56,7 @@ class RolePermissionSeeder extends Seeder
             'edit-customers',
             'delete-customers',
             'manage-loyalty-program',
+            'manage-customers',
 
             // Manajemen Pemasok (Supplier)
             'manage-suppliers',
