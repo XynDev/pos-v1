@@ -42,6 +42,7 @@ class RolePermissionSeeder extends Seeder
             'manage-categories',
             'manage-brands',
             'manage-product-variants',
+            'manage-products',
             'manage-bundle-products',
 
             // Manajemen Inventaris

@@ -2,70 +2,125 @@
 
 namespace App\Livewire\Cashier;
 
+use App\Models\Cashier\CashierSession;
+use App\Models\Cashier\HeldTransaction;
 use App\Models\Crm\Customer;
 use App\Models\ManagementProduct\Product;
 use App\Models\Sale\Sale;
 use App\Models\Stock\MovementStock;
 use Exception;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
 class Cashier extends Component
 {
-    // Keranjang Belanja
     public array $cart = [];
 
-    // Fungsionalitas Pencarian
     public string $searchQuery = '';
     public array $searchResults = [];
 
-    // Data Pembayaran
     public int $subtotal = 0;
     public int $total = 0;
     public string $paymentMethod = 'cash';
-    public $paymentAmount;
+    public $paymentAmount = null; // Inisialisasi properti
     public int $changeDue = 0;
-
     public bool $isPaymentModalOpen = false;
 
     public string $customerSearchQuery = '';
     public array $customerSearchResults = [];
     public ?array $selectedCustomer = null;
 
+    public Collection $heldTransactions;
+    public bool $isHoldModalOpen = false;
+    public string $holdReferenceName = '';
+
+    public ?Product $productForVariantSelection = null;
+    public Collection $variantsOfSelectedProduct;
+    public bool $isVariantModalOpen = false;
+
+    public function mount()
+    {
+        $this->loadHeldTransactions();
+    }
+
     public function updatedSearchQuery(): void
     {
         if (strlen($this->searchQuery) >= 2) {
-            $this->searchResults = Product::where('name', 'like', '%' . $this->searchQuery . '%')
+            $this->searchResults = Product::whereIn('type', ['simple', 'variable', 'bundle'])
+                ->where('name', 'like', '%' . $this->searchQuery . '%')
                 ->orWhere('sku', 'like', '%' . $this->searchQuery . '%')
                 ->where('is_active', true)
                 ->where('stock', '>', 0)
                 ->limit(10)
                 ->get()
-                ->all(); // <-- FIX: Konversi Collection ke array of objects
+                ->all();
         } else {
             $this->searchResults = [];
         }
     }
 
-    public function addToCart(Product $product)
+    public function selectProduct(Product $product)
     {
-        if (isset($this->cart[$product->id])) {
-            if ($this->cart[$product->id]['quantity'] < $product->stock) {
-                $this->cart[$product->id]['quantity']++;
+        if ($product->type === 'simple') {
+            $this->addVariantToCart($product);
+        } elseif ($product->type === 'variable') {
+            $this->productForVariantSelection = $product;
+            $this->variantsOfSelectedProduct = $product->variants()
+                ->where('stock', '>', 0)
+                ->get();
+            $this->isVariantModalOpen = true;
+        } elseif ($product->type === 'bundle') {
+            $this->addBundleToCart($product);
+        }
+    }
+
+    public function addVariantToCart(Product $variant)
+    {
+        if (isset($this->cart[$variant->id])) {
+            if ($this->cart[$variant->id]['quantity'] < $variant->stock) {
+                $this->cart[$variant->id]['quantity']++;
             }
         } else {
-            $this->cart[$product->id] = [
-                'product_id' => $product->id,
-                'name' => $product->name,
-                'price' => $product->selling_price,
+            $this->cart[$variant->id] = [
+                'product_id' => $variant->id,
+                'name' => $variant->name, // Nama varian yang spesifik
+                'price' => $variant->selling_price,
                 'quantity' => 1,
-                'stock' => $product->stock,
+                'stock' => $variant->stock,
+                'type' => 'variant',
             ];
         }
         $this->calculateTotals();
         $this->searchQuery = '';
         $this->searchResults = [];
+        $this->isVariantModalOpen = false;
+    }
+
+    public function addBundleToCart(Product $bundle)
+    {
+        if (isset($this->cart[$bundle->id])) {
+            $this->cart[$bundle->id]['quantity']++;
+        } else {
+            $this->cart[$bundle->id] = [
+                'product_id' => $bundle->id,
+                'name' => $bundle->name,
+                'price' => $bundle->selling_price,
+                'quantity' => 1,
+                'type' => 'bundle',
+                'components' => $bundle->bundleComponents,
+            ];
+        }
+        $this->calculateTotals();
+        $this->searchQuery = '';
+        $this->searchResults = [];
+    }
+
+    public function closeVariantModal()
+    {
+        $this->isVariantModalOpen = false;
+        $this->productForVariantSelection = null;
     }
 
     public function incrementQuantity($productId): void
@@ -102,7 +157,7 @@ class Cashier extends Component
         foreach ($this->cart as $item) {
             $this->subtotal += $item['price'] * $item['quantity'];
         }
-        $this->total = $this->subtotal; // Untuk saat ini total = subtotal
+        $this->total = $this->subtotal;
     }
 
     public function openPaymentModal(): void
@@ -145,7 +200,6 @@ class Cashier extends Component
 
         try {
             DB::transaction(function () use ($paymentAmount) {
-                // 1. Simpan data penjualan utama
                 $sale = Sale::create([
                     'invoice_number' => 'INV-' . now()->timestamp,
                     'user_id' => Auth::id(),
@@ -166,7 +220,6 @@ class Cashier extends Component
                     }
                 }
 
-                // 2. Simpan item penjualan, kurangi stok, dan catat pergerakan
                 foreach ($this->cart as $item) {
                     $sale->items()->create([
                         'product_id' => $item['product_id'],
@@ -179,20 +232,41 @@ class Cashier extends Component
                     $newStock = $product->stock - $item['quantity'];
                     $product->update(['stock' => $newStock]);
 
-                    MovementStock::create([
-                        'product_id' => $product->id,
-                        'type' => 'sale',
-                        'quantity' => -$item['quantity'], // Jumlah keluar (negatif)
-                        'stock_after' => $newStock,
-                        'reference_id' => $sale->id,
-                        'reference_type' => Sale::class,
-                        'notes' => 'Penjualan via Kasir, Invoice #' . $sale->invoice_number,
-                        'user_id' => Auth::id(),
-                    ]);
+                    if ($item['type'] === 'bundle') {
+                        foreach ($item['components'] as $component) {
+                            $componentProduct = Product::find($component->component_product_id);
+                            $quantityToReduce = $component->quantity * $item['quantity'];
+                            $newStock = $componentProduct->stock - $quantityToReduce;
+                            $componentProduct->update(['stock' => $newStock]);
+                            MovementStock::create([
+                                'product_id' => $componentProduct->id,
+                                'type' => 'sale_component',
+                                'quantity' => -$quantityToReduce,
+                                'stock_after' => $newStock,
+                                'reference_id' => $sale->id,
+                                'reference_type' => Sale::class,
+                                'notes' => 'Komponen untuk bundle #' . $sale->invoice_number,
+                                'user_id' => Auth::id(),
+                            ]);
+                        }
+                    } else {
+                        $product = Product::find($item['product_id']);
+                        $newStock = $product->stock - $item['quantity'];
+                        $product->update(['stock' => $newStock]);
+                        MovementStock::create([
+                            'product_id' => $product->id,
+                            'type' => 'sale',
+                            'quantity' => -$item['quantity'],
+                            'stock_after' => $newStock,
+                            'reference_id' => $sale->id,
+                            'reference_type' => Sale::class,
+                            'notes' => 'Penjualan via Kasir, Invoice #' . $sale->invoice_number,
+                            'user_id' => Auth::id(),
+                        ]);
+                    }
                 }
             });
 
-            // Reset state setelah berhasil
             $this->reset('cart', 'subtotal', 'total', 'paymentAmount', 'changeDue', 'selectedCustomer', 'customerSearchQuery');
             $this->closePaymentModal();
             session()->flash('message', 'Transaksi berhasil disimpan.');
@@ -231,8 +305,66 @@ class Cashier extends Component
         $this->customerSearchQuery = '';
     }
 
+    public function loadHeldTransactions()
+    {
+        $this->heldTransactions = HeldTransaction::with('customer')->latest()->get();
+    }
+
+    public function openHoldModal()
+    {
+        if (count($this->cart) > 0) {
+            $this->holdReferenceName = $this->selectedCustomer['name'] ?? 'Transaksi ' . now()->format('H:i');
+            $this->isHoldModalOpen = true;
+        }
+    }
+
+    public function holdTransaction()
+    {
+        $this->validate(['holdReferenceName' => 'required|string|max:255']);
+
+        HeldTransaction::create([
+            'reference_name' => $this->holdReferenceName,
+            'user_id' => Auth::id(),
+            'customer_id' => $this->selectedCustomer['id'] ?? null,
+            'cart_data' => $this->cart,
+            'total_amount' => $this->total,
+        ]);
+
+        $this->reset('cart', 'subtotal', 'total', 'selectedCustomer', 'customerSearchQuery');
+        $this->isHoldModalOpen = false;
+        $this->loadHeldTransactions();
+        session()->flash('message', 'Transaksi berhasil ditahan.');
+    }
+
+    public function resumeTransaction(HeldTransaction $heldTransaction)
+    {
+        if (!empty($this->cart)) {
+            session()->flash('error', 'Keranjang harus kosong sebelum melanjutkan transaksi lain.');
+            return;
+        }
+
+        $this->cart = $heldTransaction->cart_data;
+        $this->selectedCustomer = $heldTransaction->customer ? $heldTransaction->customer->toArray() : null;
+
+        $this->calculateTotals();
+
+        $heldTransaction->delete();
+        $this->loadHeldTransactions();
+    }
+
+    public function deleteHeldTransaction(HeldTransaction $heldTransaction)
+    {
+        $heldTransaction->delete();
+        $this->loadHeldTransactions();
+    }
+
     public function render()
     {
+        $activeSession = CashierSession::where('status', 'open')->exists();
+
+        if (!$activeSession) {
+            return view('livewire.cashier.no-session')->layout('layouts.app');
+        }
         return view('livewire.cashier.cashier')->layout('layouts.app');
     }
 }
