@@ -17,22 +17,18 @@ class ListProduct extends Component
 {
     use WithPagination, WithFileUploads;
 
-    // Properti untuk Modal dan Form
     public bool $isModalOpen = false;
     public bool $isEditMode = false;
 
-    // Properti untuk Data Produk
     public $productId;
     public $name, $sku, $description;
     public $purchase_price, $selling_price, $stock;
     public $category_id, $brand_id;
     public $is_active = true;
 
-    // Properti untuk Upload Gambar
-    public $image; // Untuk menampilkan gambar yang ada
-    public $newImage; // Untuk menghandle upload gambar baru
+    public $image;
+    public $newImage;
 
-    // Properti untuk Fungsionalitas Tabel
     public string $search = '';
     public int $perPage = 10;
 
@@ -48,26 +44,27 @@ class ListProduct extends Component
             'category_id' => ['required', 'exists:categories,id'],
             'brand_id' => ['required', 'exists:brands,id'],
             'is_active' => ['boolean'],
-            // Validasi untuk gambar baru, opsional saat edit
-            'newImage' => ['nullable', 'image', 'max:2048'], // Maks 2MB
+            'newImage' => ['nullable', 'image', 'max:2048'],
         ];
     }
 
     public function render()
     {
-        $products = Product::with(['category', 'brand'])
-            ->where('name', 'like', '%'.$this->search.'%')
-            ->orWhere('sku', 'like', '%'.$this->search.'%')
+        $products = Product::with(['category', 'brand', 'parent'])
+        ->where(function ($query) {
+            $query->where('type', 'simple')
+                ->orWhere('type', 'variable')
+                ->orWhere('type', 'bundle');
+        })
+            ->where(function ($query) {
+                $query->where('name', 'like', '%' . $this->search . '%')
+                    ->orWhere('sku', 'like', '%' . $this->search . '%');
+            })
+            ->latest()
             ->paginate($this->perPage);
-
-        // Data untuk dropdown di form
-        $categories = Category::all();
-        $brands = Brand::all();
 
         return view('livewire.product.list-product', [
             'products' => $products,
-            'categories' => $categories,
-            'brands' => $brands,
         ])->layout('layouts.app');
     }
 
@@ -102,8 +99,7 @@ class ListProduct extends Component
         $this->is_active = $product->is_active;
         $this->category_id = $product->category_id;
         $this->brand_id = $product->brand_id;
-        $this->image = $product->image; // Simpan path gambar lama
-
+        $this->image = $product->image;
         $this->isEditMode = true;
         $this->openModal();
     }
@@ -142,19 +138,29 @@ class ListProduct extends Component
         }
 
         session()->flash('message', $this->productId ? 'Produk berhasil diupdate.' : 'Produk berhasil dibuat.');
-
         $this->closeModal();
     }
 
     public function delete($id): void
     {
-        // Hapus juga file gambar jika ada
         $product = Product::find($id);
-        if ($product && $product->image) {
-            Storage::disk('public')->delete($product->image);
+        if ($product) {
+            if ($product->type === 'variable') {
+                foreach ($product->variants as $variant) {
+                    if ($variant->image) {
+                        Storage::disk('public')->delete($variant->image);
+                    }
+                }
+                $product->variants()->delete();
+            }
+
+            if ($product->image) {
+                Storage::disk('public')->delete($product->image);
+            }
+
+            $product->delete();
+            session()->flash('message', 'Produk berhasil dihapus.');
         }
-        $product->delete();
-        session()->flash('message', 'Produk berhasil dihapus.');
     }
 
     private function resetInputFields(): void

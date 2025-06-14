@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Product extends Model
 {
@@ -14,6 +15,8 @@ class Product extends Model
 
     protected $fillable = [
         'name',
+        'type',
+        'parent_id',
         'sku',
         'description',
         'image',
@@ -38,5 +41,25 @@ class Product extends Model
     public function saleItems(): HasMany
     {
         return $this->hasMany(SaleItem::class);
+    }
+
+    public function variants(): HasMany
+    {
+        return $this->hasMany(__CLASS__, 'parent_id');
+    }
+
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(__CLASS__, 'parent_id');
+    }
+
+    public function variantDetail(): HasOne
+    {
+        return $this->hasOne(ProductVariant::class);
+    }
+
+    public function bundleComponents(): HasMany
+    {
+        return $this->hasMany(ProductBundle::class, 'bundle_product_id');
     }
 }

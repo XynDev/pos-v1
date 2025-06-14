@@ -15,9 +15,9 @@
                         </div>
                     @endif
 
-                    <button wire:click="create()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded my-3">
-                        Tambah Produk Baru
-                    </button>
+                        <a href="{{ route('products.create') }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded my-3">
+                            Tambah Produk Baru
+                        </a>
 
                     @if($isModalOpen)
                         @include('livewire.product.list-product-form')
@@ -61,7 +61,9 @@
                                     </span>
                                     </td>
                                     <td class="border px-4 py-2">
-                                        <button wire:click="edit({{ $product->id }})" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Edit</button>
+                                        <a href="{{ route('products.edit', $product->id) }}" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                                            Edit
+                                        </a>
                                         <button wire:click="delete({{ $product->id }})" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mt-2">Hapus</button>
                                     </td>
                                 </tr>
