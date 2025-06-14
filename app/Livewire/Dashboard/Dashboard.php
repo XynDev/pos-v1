@@ -3,6 +3,7 @@
 namespace App\Livewire\Dashboard;
 
 use App\Models\Crm\Customer;
+use App\Models\DataFeed;
 use App\Models\Sale\Sale;
 use App\Models\Sale\SaleItem;
 use Illuminate\Support\Carbon;
@@ -11,6 +12,7 @@ use Livewire\Component;
 
 class Dashboard extends Component
 {
+    public $dataFeed = '';
     public int $dailySales = 0;
     public int $dailyTransactions = 0;
     public int $monthlyNewCustomers = 0;
@@ -27,6 +29,8 @@ class Dashboard extends Component
 
     public function loadStats(): void
     {
+        $this->dataFeed = new DataFeed();
+
         $today = now()->format('Y-m-d');
         $startOfMonth = now()->startOfMonth()->format('Y-m-d');
 
@@ -81,6 +85,6 @@ class Dashboard extends Component
 
     public function render()
     {
-        return view('livewire.dashboard.dashboard')->layout('layouts.app');
+        return view('livewire.dashboard.dashboard');
     }
 }
