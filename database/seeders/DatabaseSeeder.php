@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use Database\Seeders\Dummy\DafaFeedSeeder;
 use Database\Seeders\Management\RolePermissionSeeder;
 use Database\Seeders\Management\UserSeeder;
 use Illuminate\Database\Seeder;
@@ -21,6 +22,9 @@ class DatabaseSeeder extends Seeder
 
             // 2. Setelah role ada, baru jalankan seeder untuk user
             UserSeeder::class,
+
+            // 3. Jalankan seeder untuk dummy data feed
+            DafaFeedSeeder::class,
         ]);
     }
 }
