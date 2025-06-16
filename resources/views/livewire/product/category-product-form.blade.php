@@ -1,45 +1,95 @@
-<div class="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-            <form>
-                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <div class="mb-4">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+{{--
+    CATATAN:
+    - Ditambahkan Alpine.js (@entangle) untuk mengontrol visibilitas modal.
+    - Ditambahkan transisi fade untuk backdrop dan transisi fade + scale untuk panel modal.
+    - REVISI: Ditambahkan fungsionalitas untuk menutup modal dengan menekan tombol Escape atau mengklik di luar panel.
+--}}
+<div
+    class="relative z-50"
+    aria-labelledby="modal-title"
+    role="dialog"
+    aria-modal="true"
+    x-data="{ show: @entangle('isModalOpen') }"
+    x-show="show"
+    @keydown.escape.window="show = false"
+    style="display: none;"
+>
+    {{--
+        Backdrop, dengan animasi fade dan aksi klik untuk menutup.
+    --}}
+    <div
+        x-show="show"
+        x-transition:enter="ease-out duration-300"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="ease-in duration-200"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        class="fixed inset-0 bg-gray-500/50 dark:bg-gray-900/70 backdrop-blur-sm transition-opacity"
+        aria-hidden="true"
+    ></div>
+
+    {{--
+        Container layar penuh untuk memusatkan modal.
+    --}}
+    <div class="fixed inset-0 z-50 w-screen overflow-y-auto" @click="show = false">
+        <div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
+
+            {{-- Panel Modal Sebenarnya, dengan animasi fade & scale --}}
+            <div
+                x-show="show"
+                @click.stop
+                x-transition:enter="ease-out duration-300"
+                x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                x-transition:leave="ease-in duration-200"
+                x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                class="relative transform overflow-hidden rounded-xl bg-white dark:bg-gray-800 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg border border-gray-200 dark:border-gray-700"
+            >
+                <form>
+                    {{-- Header Modal --}}
+                    <header class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg leading-6 font-semibold text-gray-800 dark:text-gray-100" id="modal-title">
                             {{ $isEditMode ? 'Edit Kategori' : 'Buat Kategori Baru' }}
                         </h3>
+                    </header>
+
+                    {{-- Konten Form --}}
+                    <div class="bg-white dark:bg-gray-800 p-6 space-y-4">
+                        <div>
+                            <label for="name" class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Nama Kategori</label>
+                            <input type="text" id="name" placeholder="Masukkan Nama" wire:model.live="name" class="form-input w-full dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-200">
+                            @error('name') <span class="text-red-500 text-xs mt-1">{{ $message }}</span>@enderror
+                        </div>
+                        <div>
+                            <label for="slug" class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Slug</label>
+                            <input type="text" id="slug" wire:model="slug" readonly class="form-input w-full bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-400 cursor-not-allowed">
+                            @error('slug') <span class="text-red-500 text-xs mt-1">{{ $message }}</span>@enderror
+                        </div>
+                        <div>
+                            <label for="parentId" class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Kategori Induk (Opsional)</label>
+                            <select wire:model="parentId" id="parentId" class="form-select w-full dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-200">
+                                <option value="">-- Tidak Ada --</option>
+                                @foreach($parentCategories as $parent)
+                                    <option value="{{ $parent->id }}">{{ $parent->name }}</option>
+                                @endforeach
+                            </select>
+                            @error('parentId') <span class="text-red-500 text-xs mt-1">{{ $message }}</span>@enderror
+                        </div>
                     </div>
-                    <div class="mb-4">
-                        <label for="name" class="block text-gray-700 text-sm font-bold mb-2">Nama Kategori:</label>
-                        <input type="text" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="name" placeholder="Masukkan Nama" wire:model.live="name">
-                        @error('name') <span class="text-red-500">{{ $message }}</span>@enderror
-                    </div>
-                    <div class="mb-4">
-                        <label for="slug" class="block text-gray-700 text-sm font-bold mb-2">Slug:</label>
-                        <input type="text" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline bg-gray-100" id="slug" wire:model="slug" readonly>
-                        @error('slug') <span class="text-red-500">{{ $message }}</span>@enderror
-                    </div>
-                    <div class="mb-4">
-                        <label for="parentId" class="block text-gray-700 text-sm font-bold mb-2">Kategori Induk (Opsional):</label>
-                        <select wire:model="parentId" id="parentId" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                            <option value="">-- Tidak Ada --</option>
-                            @foreach($parentCategories as $parent)
-                                <option value="{{ $parent->id }}">{{ $parent->name }}</option>
-                            @endforeach
-                        </select>
-                        @error('parentId') <span class="text-red-500">{{ $message }}</span>@enderror
-                    </div>
-                </div>
-                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                    <button wire:click.prevent="store()" type="button" class="inline-flex justify-center w-full rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
-                        Simpan
-                    </button>
-                    <button wire:click="closeModal()" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                        Batal
-                    </button>
-                </div>
-            </form>
+
+                    {{-- Footer Modal --}}
+                    <footer class="bg-gray-50 dark:bg-gray-800/50 px-6 py-4 sm:flex sm:flex-row-reverse rounded-b-xl border-t border-gray-200 dark:border-gray-700">
+                        <button wire:click.prevent="store()" type="button" class="btn w-full sm:w-auto sm:ml-3 bg-indigo-600 hover:bg-indigo-700 text-white">
+                            Simpan
+                        </button>
+                        <button wire:click="closeModal()" type="button" class="btn w-full sm:w-auto mt-3 sm:mt-0 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200">
+                            Batal
+                        </button>
+                    </footer>
+                </form>
+            </div>
         </div>
     </div>
 </div>

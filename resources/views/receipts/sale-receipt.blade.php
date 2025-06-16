@@ -1,189 +1,104 @@
 @php use Carbon\Carbon; @endphp
-    <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Struk Penjualan - {{ $sale->invoice_number }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* CSS untuk tampilan struk thermal printer */
-        @page {
-            size: 80mm; /* Sesuaikan lebar kertas printer Anda */
-            margin: 0;
-        }
-
         body {
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 10pt;
-            color: #000;
-            line-height: 1.4;
+            font-family: 'Inter', sans-serif, system-ui;
+            -webkit-print-color-adjust: exact; /* Memastikan warna tercetak dengan benar */
+        }
+        @page {
+            size: 80mm;
             margin: 0;
-            padding: 10px;
         }
-
-        .container {
-            width: 100%;
-        }
-
-        .header, .footer {
-            text-align: center;
-        }
-
-        .header h1 {
-            margin: 0;
-            font-size: 14pt;
-        }
-
-        .header p {
-            margin: 2px 0;
-        }
-
-        .divider {
-            border-top: 1px dashed #000;
-            margin: 5px 0;
-        }
-
-        .meta-info, .item-list, .totals {
-            width: 100%;
-        }
-
-        .meta-info td {
-            padding: 1px 0;
-        }
-
-        .item-list table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .item-list th, .item-list td {
-            padding: 2px 0;
-        }
-
-        .item-list .item-name {
-            text-align: left;
-        }
-
-        .item-list .item-qty, .item-list .item-price, .item-list .item-subtotal {
-            text-align: right;
-        }
-
-        .totals table {
-            width: 100%;
-        }
-
-        .totals td {
-            padding: 1px 0;
-        }
-
-        .totals .label {
-            text-align: left;
-        }
-
-        .totals .value {
-            text-align: right;
-        }
-
-        .footer p {
-            margin-top: 10px;
-            font-style: italic;
-        }
-
-        /* Sembunyikan tombol saat mencetak */
         @media print {
+            body {
+                margin: 0;
+                padding: 0;
+            }
             .print-button-container {
                 display: none;
             }
         }
-
-        .print-button-container {
-            text-align: center;
-            margin-bottom: 20px;
+        .receipt-container {
+            width: 280px;
+            margin: 0 auto;
+            padding: 15px;
         }
-
-        .print-button {
-            padding: 10px 20px;
-            font-size: 12pt;
-            cursor: pointer;
-        }
-
     </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="bg-gray-100 dark:bg-gray-900">
 
-<div class="print-button-container">
-    <button onclick="window.print()" class="print-button">Cetak Struk</button>
+<div class="print-button-container text-center py-5">
+    <button onclick="window.print()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg shadow">Cetak Struk</button>
 </div>
 
-<div class="container">
-    <header class="header">
-        <h1>{{ $storeDetails['name'] }}</h1>
-        <p>{{ $storeDetails['address'] }}</p>
-        <p>{{ $storeDetails['phone'] }}</p>
+<div class="receipt-container bg-white dark:bg-gray-800 shadow-lg">
+    <header class="text-center mb-4">
+        <h1 class="text-xl font-bold text-gray-900 dark:text-white">{{ $storeDetails['name'] }}</h1>
+        <p class="text-xs text-gray-600 dark:text-gray-400">{{ $storeDetails['address'] }}</p>
+        <p class="text-xs text-gray-600 dark:text-gray-400">{{ $storeDetails['phone'] }}</p>
     </header>
 
-    <div class="divider"></div>
-
-    <table class="meta-info">
-        <tr>
-            <td>No. Inv:</td>
-            <td>{{ $sale->invoice_number }}</td>
-        </tr>
-        <tr>
-            <td>Tanggal:</td>
-            <td>{{ Carbon::parse($sale->created_at)->format('d/m/y H:i') }}</td>
-        </tr>
-        <tr>
-            <td>Kasir:</td>
-            <td>{{ $sale->user->name }}</td>
-        </tr>
-    </table>
-
-    <div class="divider"></div>
-
-    <div class="item-list">
-        <table>
-            <tbody>
-            @foreach($sale->items as $item)
-                <tr>
-                    <td colspan="2" class="item-name">{{ $item->product->name }}</td>
-                </tr>
-                <tr>
-                    <td>{{ $item->quantity }} x {{ number_format($item->price, 0, ',', '.') }}</td>
-                    <td class="item-subtotal">{{ number_format($item->subtotal, 0, ',', '.') }}</td>
-                </tr>
-            @endforeach
-            </tbody>
-        </table>
+    <div class="border-t border-b border-dashed border-gray-300 dark:border-gray-600 py-2 my-2 text-xs">
+        <div class="flex justify-between">
+            <span class="text-gray-600 dark:text-gray-400">No. Invoice</span>
+            <span class="font-mono font-semibold text-gray-800 dark:text-gray-200">{{ $sale->invoice_number }}</span>
+        </div>
+        <div class="flex justify-between">
+            <span class="text-gray-600 dark:text-gray-400">Tanggal</span>
+            <span class="text-gray-800 dark:text-gray-200">{{ Carbon::parse($sale->created_at)->format('d/m/y H:i') }}</span>
+        </div>
+        <div class="flex justify-between">
+            <span class="text-gray-600 dark:text-gray-400">Kasir</span>
+            <span class="text-gray-800 dark:text-gray-200">{{ $sale->user->name }}</span>
+        </div>
     </div>
 
-    <div class="divider"></div>
-
-    <div class="totals">
-        <table>
-            <tr>
-                <td class="label">Subtotal</td>
-                <td class="value">{{ number_format($sale->total_amount, 0, ',', '.') }}</td>
-            </tr>
-            <tr>
-                <td class="label">Total</td>
-                <td class="value">{{ number_format($sale->final_amount, 0, ',', '.') }}</td>
-            </tr>
-            <tr>
-                <td class="label">{{ ucfirst(str_replace('_', ' ', $sale->payment_method)) }}</td>
-                <td class="value">{{ number_format($sale->amount_paid, 0, ',', '.') }}</td>
-            </tr>
-            <tr>
-                <td class="label">Kembali</td>
-                <td class="value">{{ number_format($sale->change_due, 0, ',', '.') }}</td>
-            </tr>
-        </table>
+    <div class="item-list my-3">
+        @foreach($sale->items as $item)
+            <div class="item mb-2">
+                <p class="font-semibold text-sm text-gray-800 dark:text-gray-100">{{ $item->product->name }}</p>
+                <div class="flex justify-between text-xs text-gray-600 dark:text-gray-300">
+                    <span>{{ $item->quantity }} x Rp {{ number_format($item->price, 0, ',', '.') }}</span>
+                    <span class="font-semibold">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</span>
+                </div>
+            </div>
+        @endforeach
     </div>
 
-    <div class="divider"></div>
+    <div class="totals border-t border-dashed border-gray-300 dark:border-gray-600 pt-2 text-sm">
+        <div class="flex justify-between text-gray-700 dark:text-gray-200">
+            <span>Subtotal</span>
+            <span>Rp {{ number_format($sale->total_amount, 0, ',', '.') }}</span>
+        </div>
+        <div class="flex justify-between font-bold text-base text-gray-900 dark:text-white pt-2 mt-2 border-t border-gray-200 dark:border-gray-600">
+            <span>TOTAL</span>
+            <span>Rp {{ number_format($sale->final_amount, 0, ',', '.') }}</span>
+        </div>
+    </div>
 
-    <footer class="footer">
-        <p>{{ $storeDetails['footer_note'] }}</p>
+    <div class="payment-details border-t border-dashed border-gray-300 dark:border-gray-600 pt-2 mt-2 text-xs">
+        <div class="flex justify-between text-gray-600 dark:text-gray-300">
+            <span>{{ ucfirst(str_replace('_', ' ', $sale->payment_method)) }}</span>
+            <span>Rp {{ number_format($sale->amount_paid, 0, ',', '.') }}</span>
+        </div>
+        <div class="flex justify-between text-gray-600 dark:text-gray-300">
+            <span>Kembali</span>
+            <span>Rp {{ number_format($sale->change_due, 0, ',', '.') }}</span>
+        </div>
+    </div>
+
+
+    <footer class="text-center mt-4 pt-2 border-t border-dashed border-gray-300 dark:border-gray-600">
+        <p class="text-xs text-gray-600 dark:text-gray-400">{{ $storeDetails['footer_note'] }}</p>
     </footer>
 </div>
 </body>

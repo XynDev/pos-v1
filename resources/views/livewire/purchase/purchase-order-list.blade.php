@@ -1,76 +1,95 @@
 <div>
-    <div>
-        <x-slot name="header">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Daftar Pesanan Pembelian (PO)') }}
-            </h2>
-        </x-slot>
+    <div class="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-9xl mx-auto">
+        <x-page-header>
+            Daftar Pesanan Pembelian (PO)
 
-        <div class="py-12">
-            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg px-4 py-4">
-                    @if (session()->has('message'))
-                        <div class="bg-teal-100 border-t-4 border-teal-500 rounded-b text-teal-900 px-4 py-3 shadow-md my-3" role="alert">
-                            <p class="text-sm">{{ session('message') }}</p>
-                        </div>
-                    @endif
-
-                    <!-- Tombol Buat PO Baru -->
-                    <a href="{{ route('purchases.create') }}" class="inline-block bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded my-3">
-                        Buat PO Baru
-                    </a>
-
-                    <div class="mb-4">
-                        <input type="text" wire:model.live.debounce.300ms="search" placeholder="Cari berdasarkan No. PO atau Nama Pemasok..."
-                               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            <x-slot name="actions">
+                <div class="relative">
+                    <input type="text" wire:model.live.debounce.300ms="search" placeholder="Cari No. PO atau Pemasok..."
+                           class="form-input w-full md:w-64 pl-9 dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-200">
+                    <div class="absolute inset-y-0 left-0 flex items-center justify-center pl-3">
+                        <svg class="w-4 h-4 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>
+                        </svg>
                     </div>
+                </div>
+                <a href="{{ route('purchases.create') }}" class="btn bg-indigo-600 hover:bg-indigo-700 text-white whitespace-nowrap">
+                    <svg class="w-4 h-4 fill-current opacity-50 shrink-0" viewBox="0 0 16 16">
+                        <path d="M15 7H9V1c0-.6-.4-1-1-1S7 .4 7 1v6H1c-.6 0-1 .4-1 1s.4 1 1 1h6v6c0 .6.4 1 1 1s1-.4 1-1V9h6c.6 0 1-.4 1-1s-.4-1-1-1z"></path>
+                    </svg>
+                    <span class="hidden xs:block ml-2">Buat PO Baru</span>
+                </a>
+            </x-slot>
+        </x-page-header>
 
-                    <div class="overflow-x-auto">
-                        <table class="table-auto w-full">
-                            <thead>
-                            <tr class="bg-gray-100">
-                                <th class="px-4 py-2">No. PO</th>
-                                <th class="px-4 py-2">Pemasok</th>
-                                <th class="px-4 py-2">Tanggal Pesan</th>
-                                <th class="px-4 py-2">Total</th>
-                                <th class="px-4 py-2">Status</th>
-                                <th class="px-4 py-2">Aksi</th>
+        <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg border border-gray-200 dark:border-gray-700">
+            <div class="p-3">
+                @if (session()->has('message'))
+                    <div class="bg-teal-100 dark:bg-teal-900/30 border-t-4 border-teal-500 rounded-b text-teal-900 dark:text-teal-300 px-4 py-3 shadow-md my-3" role="alert">
+                        <p class="text-sm">{{ session('message') }}</p>
+                    </div>
+                @endif
+
+                <div class="overflow-x-auto">
+                    <table class="table-auto w-full dark:text-gray-300">
+                        <thead class="text-xs uppercase text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-700/50 rounded-xs">
+                        <tr>
+                            <th class="p-2 whitespace-nowrap"><div class="font-semibold text-left">No. PO</div></th>
+                            <th class="p-2 whitespace-nowrap"><div class="font-semibold text-left">Pemasok</div></th>
+                            <th class="p-2 whitespace-nowrap"><div class="font-semibold text-left">Tanggal Pesan</div></th>
+                            <th class="p-2 whitespace-nowrap"><div class="font-semibold text-right">Total</div></th>
+                            <th class="p-2 whitespace-nowrap"><div class="font-semibold text-center">Status</div></th>
+                            <th class="p-2 whitespace-nowrap"><div class="font-semibold text-center">Aksi</div></th>
+                        </tr>
+                        </thead>
+                        <tbody class="text-sm divide-y divide-gray-100 dark:divide-gray-700/60">
+                        @forelse($purchaseOrders as $po)
+                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-900/20">
+                                <td class="p-2">
+                                    <div class="font-mono text-gray-800 dark:text-gray-100">{{ $po->po_number }}</div>
+                                </td>
+                                <td class="p-2">
+                                    <div>{{ $po->supplier->name ?? 'N/A' }}</div>
+                                </td>
+                                <td class="p-2">
+                                    <div>{{ \Carbon\Carbon::parse($po->order_date)->format('d M Y') }}</div>
+                                </td>
+                                <td class="p-2">
+                                    <div class="text-right font-medium">Rp {{ number_format($po->total_amount, 0, ',', '.') }}</div>
+                                </td>
+                                <td class="p-2">
+                                    <div class="text-center">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                            @switch($po->status)
+                                                @case('pending') bg-yellow-100 dark:bg-yellow-800/30 text-yellow-800 dark:text-yellow-300 @break
+                                                @case('completed') bg-green-100 dark:bg-green-800/30 text-green-800 dark:text-green-300 @break
+                                                @case('cancelled') bg-red-100 dark:bg-red-800/30 text-red-800 dark:text-red-300 @break
+                                                @default bg-gray-100 dark:bg-gray-600/30 text-gray-800 dark:text-gray-300
+                                            @endswitch
+                                        ">
+                                            {{ ucfirst($po->status) }}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td class="p-2">
+                                    <div class="flex justify-center">
+                                        <a href="{{ route('purchases.show', $po->id) }}" class="btn-sm bg-indigo-500 hover:bg-indigo-600 text-white">Detail</a>
+                                    </div>
+                                </td>
                             </tr>
-                            </thead>
-                            <tbody>
-                            @forelse($purchaseOrders as $po)
-                                <tr>
-                                    <td class="border px-4 py-2 font-mono">{{ $po->po_number }}</td>
-                                    <td class="border px-4 py-2">{{ $po->supplier->name ?? 'N/A' }}</td>
-                                    <td class="border px-4 py-2">{{ \Carbon\Carbon::parse($po->order_date)->format('d M Y') }}</td>
-                                    <td class="border px-4 py-2 text-right">Rp {{ number_format($po->total_amount, 0, ',', '.') }}</td>
-                                    <td class="border px-4 py-2 text-center">
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                                        @switch($po->status)
-                                            @case('pending') bg-yellow-100 text-yellow-800 @break
-                                            @case('completed') bg-green-100 text-green-800 @break
-                                            @case('cancelled') bg-red-100 text-red-800 @break
-                                            @default bg-gray-100 text-gray-800
-                                        @endswitch
-                                    ">
-                                        {{ ucfirst($po->status) }}
-                                    </span>
-                                    </td>
-                                    <td class="border px-4 py-2 text-center">
-                                        <a href="{{ route('purchases.show', $po->id) }}" class="text-indigo-600 hover:text-indigo-900">Lihat Detail</a>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td class="border px-4 py-2 text-center" colspan="6">Belum ada Pesanan Pembelian.</td>
-                                </tr>
-                            @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="mt-4">
-                        {{ $purchaseOrders->links() }}
-                    </div>
+                        @empty
+                            <tr>
+                                <td class="p-4 text-center text-gray-500 dark:text-gray-400" colspan="6">
+                                    Belum ada Pesanan Pembelian untuk ditampilkan.
+                                </td>
+                            </tr>
+                        @endforelse
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mt-4 px-3">
+                    {{ $purchaseOrders->links('components.pagination-numeric') }}
                 </div>
             </div>
         </div>
