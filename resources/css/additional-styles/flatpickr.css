@@ -26,7 +26,7 @@
     width: calc(var(--daysWidth) + calc(var(--calendarPadding)*2));
 }
 
-@media (width >= theme(--breakpoint-lg)) {
+@screen lg {
     .flatpickr-calendar {
         @apply left-0 right-auto;
         margin-left: 0;
@@ -84,8 +84,8 @@
     @apply bg-transparent;
 }
 
-.flatpickr-day, 
-.flatpickr-day.prevMonthDay, 
+.flatpickr-day,
+.flatpickr-day.prevMonthDay,
 .flatpickr-day.nextMonthDay,
 .flatpickr-day.selected.startRange,
 .flatpickr-day.startRange.startRange,
@@ -168,7 +168,7 @@
 .flatpickr-months .flatpickr-next-month {
     position: static;
     height: auto;
-    @apply text-gray-400 hover:text-gray-900 dark:text-gray-500 dark:hover:text-gray-300;    
+    @apply text-gray-400 hover:text-gray-900 dark:text-gray-500 dark:hover:text-gray-300;
 }
 
 .flatpickr-months .flatpickr-prev-month svg,

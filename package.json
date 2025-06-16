@@ -10,6 +10,7 @@
         "@tailwindcss/forms": "^0.5.10",
         "@tailwindcss/postcss": "^4.0.3",
         "@tailwindcss/typography": "^0.5.16",
+        "autoprefixer": "^10.4.21",
         "axios": "^1.7.9",
         "brotli-size": "^4.0.0",
         "esbuild": "^0.24.2",
@@ -19,15 +20,7 @@
         "vite": "^6.0.11"
     },
     "dependencies": {
-        "@alpinejs/anchor": "^3.14.8",
-        "@alpinejs/collapse": "^3.14.8",
-        "@alpinejs/focus": "^3.14.8",
-        "@alpinejs/intersect": "^3.14.8",
-        "@alpinejs/mask": "^3.14.8",
-        "@alpinejs/morph": "^3.14.8",
-        "@alpinejs/persist": "^3.14.8",
         "@vue/reactivity": "^3.5.13",
-        "alpinejs": "^3.14.8",
         "chart.js": "^4.4.7",
         "chartjs-adapter-moment": "^1.0.1",
         "flatpickr": "^4.6.13",
