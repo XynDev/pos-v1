@@ -1,6 +1,4 @@
 <div class="space-y-6">
-
-    {{-- Card Atribut Produk --}}
     <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg border border-gray-200 dark:border-gray-700">
         <header class="px-5 py-4 border-b border-gray-100 dark:border-gray-700/60 flex items-center justify-between">
             <h2 class="font-semibold text-gray-800 dark:text-gray-100">Atribut & Varian</h2>
@@ -39,7 +37,6 @@
         </div>
     </div>
 
-    {{-- Card Daftar Varian --}}
     @if(!empty($variants))
         <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg border border-gray-200 dark:border-gray-700">
             <header class="px-5 py-4 border-b border-gray-100 dark:border-gray-700/60">
@@ -54,7 +51,9 @@
                             <th class="p-2 whitespace-nowrap"><div class="font-semibold text-left">SKU</div></th>
                             <th class="p-2 whitespace-nowrap"><div class="font-semibold text-left">Harga Beli</div></th>
                             <th class="p-2 whitespace-nowrap"><div class="font-semibold text-left">Harga Jual</div></th>
-                            <th class="p-2 whitespace-nowrap"><div class="font-semibold text-left">Stok</div></th>
+                            @foreach($locations as $location)
+                                <th class="p-2 text-center">{{ $location->name }}</th>
+                            @endforeach
                         </tr>
                         </thead>
                         <tbody class="text-sm divide-y divide-gray-100 dark:divide-gray-700/60">
@@ -73,10 +72,11 @@
                                     <input type="number" wire:model="variants.{{ $vIndex }}.selling_price" class="form-input w-full text-sm dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-200">
                                     @error('variants.'.$vIndex.'.selling_price') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </td>
-                                <td class="p-2">
-                                    <input type="number" wire:model="variants.{{ $vIndex }}.stock" class="form-input w-full text-sm dark:bg-gray-700/50 dark:border-gray-600 dark:text-gray-200">
-                                    @error('variants.'.$vIndex.'.stock') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                                </td>
+                                @foreach($locations as $location)
+                                    <td class="p-2">
+                                        <input type="number" wire:model="variants.{{ $vIndex }}.stocks.{{ $location->id }}" class="w-20 form-input text-sm text-center">
+                                    </td>
+                                @endforeach
                             </tr>
                         @endforeach
                         </tbody>

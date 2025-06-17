@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Product;
 
+use App\Models\Branch\Location;
 use App\Models\ManagementProduct\AttributeValue;
 use App\Models\ManagementProduct\Brand;
 use App\Models\ManagementProduct\Category;
@@ -11,6 +12,7 @@ use App\Models\ManagementProduct\ProductVariant;
 use App\Models\Stock\MovementStock;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -34,15 +36,19 @@ class ProductForm extends Component
     public $componentSearchQuery = '';
     public $componentSearchResults = [];
 
+    public $stocks = [];
+
     public function mount($productId = null)
     {
         if ($productId) {
-            $this->product = Product::with([
-                'variants.variantDetail.attributeValues.productAttribute',
-                'bundleComponents.component'
-            ])->findOrFail($productId);
+            $this->product = Product::with(['variants.locations', 'variants.variantDetail.attributeValues.productAttribute', 'bundleComponents.component', 'locations'])->findOrFail($productId);
         } else {
             $this->product = new Product();
+        }
+
+        $locations = Location::where('is_active', true)->get();
+        foreach ($locations as $location) {
+            $this->stocks[$location->id] = 0;
         }
 
         if ($this->product->exists) {
@@ -58,7 +64,11 @@ class ProductForm extends Component
                 $this->sku = $this->product->sku;
                 $this->purchase_price = $this->product->purchase_price;
                 $this->selling_price = $this->product->selling_price;
-                $this->stock = $this->product->stock;
+                foreach($this->product->locations as $location) {
+                    if (isset($this->stocks[$location->id])) {
+                        $this->stocks[$location->id] = $location->pivot->stock;
+                    }
+                }
             } elseif ($this->productType === 'variable') {
                 $this->loadExistingVariants();
             } elseif ($this->productType === 'bundle') {
@@ -73,12 +83,23 @@ class ProductForm extends Component
     {
         $attributes = new Collection();
         $variantsData = [];
+
         foreach ($this->product->variants as $variant) {
+
             $currentVariantAttributes = [];
-            foreach ($variant->variantDetail->attributeValues as $value) {
-                $attributes->put($value->productAttribute->id, $value->productAttribute->name);
-                $currentVariantAttributes[$value->productAttribute->name] = $value->value;
+
+            if ($variant->variantDetail) {
+                foreach ($variant->variantDetail->attributeValues as $value) {
+                    $attributes->put($value->productAttribute->id, $value->productAttribute->name);
+                    $currentVariantAttributes[$value->productAttribute->name] = $value->value;
+                }
             }
+
+            $variantStocks = [];
+            foreach($variant->locations as $location) {
+                $variantStocks[$location->id] = $location->pivot->stock;
+            }
+
             $variantsData[] = [
                 'id' => $variant->id,
                 'name' => $variant->name,
@@ -86,12 +107,12 @@ class ProductForm extends Component
                 'sku' => $variant->sku,
                 'purchase_price' => $variant->purchase_price,
                 'selling_price' => $variant->selling_price,
-                'stock' => $variant->stock,
+                'stocks' => $variantStocks,
             ];
         }
         $this->variants = $variantsData;
         $this->productAttributesData = $attributes->map(function ($name, $id) {
-            $values = collect($this->variants)->pluck('attributes.' . $name)->unique()->implode(', ');
+            $values = collect($this->variants)->pluck('attributes.' . $name)->unique()->filter()->implode(', ');
             return ['id' => $id, 'values' => $values];
         })->values()->toArray();
     }
@@ -115,37 +136,36 @@ class ProductForm extends Component
     protected function rules(): array
     {
         $rules = [
-            'name' => 'required|string|min:3',
-            'category_id' => 'required|exists:categories,id',
-            'brand_id' => 'required|exists:brands,id',
-            'description' => 'nullable|string',
-            'productType' => 'required|in:simple,variable,bundle',
-            'newImage' => 'nullable|image|max:2048',
+            'name' => 'required|string|min:3', 'category_id' => 'required|exists:categories,id',
+            'brand_id' => 'required|exists:brands,id', 'description' => 'nullable|string',
+            'productType' => 'required|in:simple,variable,bundle', 'newImage' => 'nullable|image|max:2048',
         ];
 
+        $productId = $this->product->id ?? 'NULL';
+
         if ($this->productType === 'simple') {
-            $rules = array_merge($rules, [
-                'sku' => 'required|string|unique:products,sku,' . ($this->product->id ?? 'NULL'),
-                'purchase_price' => 'required|numeric|min:0',
-                'selling_price' => 'required|numeric|min:0',
-                'stock' => 'required|integer|min:0',
-            ]);
+            $rules['sku'] = "required|string|unique:products,sku,{$productId}";
+            $rules['purchase_price'] = 'required|numeric|min:0';
+            $rules['selling_price'] = 'required|numeric|min:0';
+            $rules['stocks.*'] = 'required|integer|min:0';
         } elseif ($this->productType === 'variable') {
-            $rules = array_merge($rules, [
-                'productAttributesData' => 'required|array|min:1',
-                'variants' => 'required|array|min:1',
-                'variants.*.sku' => 'required|distinct|unique:products,sku',
-                'variants.*.purchase_price' => 'required|numeric|min:0',
-                'variants.*.selling_price' => 'required|numeric|min:0',
-                'variants.*.stock' => 'required|integer|min:0',
-            ]);
+            $rules['productAttributesData'] = 'required|array|min:1';
+            $rules['variants'] = 'required|array|min:1';
+
+            // FIX: Validasi SKU yang lebih cerdas untuk varian
+            $ignoreIds = $this->product->exists ? $this->product->variants()->pluck('id')->toArray() : [];
+            foreach ($this->variants as $index => $variant) {
+                $rules['variants.' . $index . '.sku'] = ['required', 'distinct', Rule::unique('products', 'sku')->ignore($variant['id'] ?? null)];
+            }
+
+            $rules['variants.*.purchase_price'] = 'required|numeric|min:0';
+            $rules['variants.*.selling_price'] = 'required|numeric|min:0';
+            $rules['variants.*.stocks.*'] = 'required|integer|min:0';
         } else {
-            $rules = array_merge($rules, [
-                'selling_price' => 'required|numeric|min:0',
-                'stock' => 'required|integer|min:0',
-                'bundleComponents' => 'required|array|min:1',
-                'bundleComponents.*.quantity' => 'required|integer|min:1',
-            ]);
+            $rules['selling_price'] = 'required|numeric|min:0';
+            $rules['stock'] = 'required|integer|min:0';
+            $rules['bundleComponents'] = 'required|array|min:1';
+            $rules['bundleComponents.*.quantity'] = 'required|integer|min:1';
         }
         return $rules;
     }
@@ -269,7 +289,6 @@ class ProductForm extends Component
             'sku' => $this->sku,
             'purchase_price' => $this->purchase_price,
             'selling_price' => $this->selling_price,
-            'stock' => $this->stock,
         ];
 
         if ($this->newImage) {
@@ -277,15 +296,26 @@ class ProductForm extends Component
         }
 
         $product = Product::updateOrCreate(['id' => $this->product->id], $data);
-        if ($this->stock > 0 && !$this->product->exists) {
-            MovementStock::create([
-                'product_id' => $product->id,
-                'type' => 'initial_stock',
-                'quantity' => $product->stock,
-                'stock_after' => $product->stock,
-                'notes' => 'Stok awal saat pembuatan produk',
-                'user_id' => auth()->id()
-            ]);
+
+        $stocksToSync = [];
+        foreach ($this->stocks as $locationId => $stockCount) {
+            $stocksToSync[$locationId] = ['stock' => $stockCount];
+        }
+        $product->locations()->sync($stocksToSync);
+
+        if (!$this->product->exists) {
+            foreach ($this->stocks as $locationId => $stock) {
+                if ($stock > 0) {
+                    MovementStock::create([
+                        'product_id' => $product->id,
+                        'type' => 'initial_stock',
+                        'quantity' => $stock,
+                        'stock_after' => $stock,
+                        'notes' => 'Stok awal di lokasi ' . Location::find($locationId)->name,
+                        'user_id' => auth()->id()
+                    ]);
+                }
+            }
         }
     }
 
@@ -305,7 +335,7 @@ class ProductForm extends Component
         $parentProduct = Product::updateOrCreate(['id' => $this->product->id], $parentData);
 
         $parentProduct->variants()->delete();
-
+        $keptVariantIds = [];
         foreach ($this->variants as $variantData) {
             $variantProduct = $parentProduct->variants()->create([
                 'name' => $variantData['name'],
@@ -313,21 +343,33 @@ class ProductForm extends Component
                 'sku' => $variantData['sku'],
                 'purchase_price' => $variantData['purchase_price'],
                 'selling_price' => $variantData['selling_price'],
-                'stock' => $variantData['stock'],
                 'category_id' => $parentProduct->category_id,
                 'brand_id' => $parentProduct->brand_id,
                 'is_active' => true,
             ]);
-            if ($variantData['stock'] > 0) {
-                MovementStock::create([
-                    'product_id' => $variantProduct->id,
-                    'type' => 'initial_stock',
-                    'quantity' => $variantData['stock'],
-                    'stock_after' => $variantData['stock'],
-                    'notes' => 'Stok awal saat pembuatan varian',
-                    'user_id' => auth()->id()
-                ]);
+
+            $variantStocks = $variantData['stocks'] ?? [];
+            $stocksToSync = [];
+            foreach ($variantStocks as $locationId => $stockCount) {
+                $stocksToSync[$locationId] = ['stock' => $stockCount];
             }
+            $variantProduct->locations()->sync($stocksToSync);
+
+            if (!$this->product->exists) {
+                foreach ($variantStocks as $locationId => $stock) {
+                    if ($stock > 0) {
+                        MovementStock::create([
+                            'product_id' => $variantProduct->id,
+                            'type' => 'initial_stock',
+                            'quantity' => $stock,
+                            'stock_after' => $stock,
+                            'notes' => 'Stok awal varian di lokasi ' . Location::find($locationId)->name,
+                            'user_id' => auth()->id()
+                        ]);
+                    }
+                }
+            }
+
             $variantDetail = ProductVariant::create([
                 'product_id' => $variantProduct->id
             ]);
@@ -383,6 +425,7 @@ class ProductForm extends Component
             'categories' => Category::all(),
             'brands' => Brand::all(),
             'productAttributes' => ProductAttribute::all(),
+            'locations' => Location::where('is_active', true)->get(),
         ])->layout('layouts.app');
     }
 }

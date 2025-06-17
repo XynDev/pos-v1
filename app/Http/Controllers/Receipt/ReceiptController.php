@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Receipt;
 
 use App\Http\Controllers\Controller;
 use App\Models\Sale\Sale;
+use App\Models\Setting\Setting;
 use Illuminate\Http\Request;
 
 class ReceiptController extends Controller
@@ -14,11 +15,14 @@ class ReceiptController extends Controller
         $sale->load(['user', 'customer', 'items.product']);
 
         // Anda bisa menambahkan detail toko di sini dari config atau database
+        $settings = Setting::all()->keyBy('key');
+
         $storeDetails = [
-            'name' => 'TOKO ANDA',
-            'address' => 'Jl. Raya Sejahtera No. 123, Kota Bahagia',
-            'phone' => '0812-3456-7890',
-            'footer_note' => 'Terima kasih telah berbelanja!',
+            'name' => $settings->get('store_name')->value ?? 'TOKO ANDA',
+            'address' => $settings->get('store_address')->value ?? 'Alamat Toko Anda',
+            'phone' => $settings->get('store_phone')->value ?? 'Telepon Toko Anda',
+            'footer_note' => $settings->get('receipt_footer_note')->value ?? 'Terima kasih telah berbelanja!',
+            'logo' => $settings->get('store_logo')->value ?? null,
         ];
 
         return view('receipts.sale-receipt', compact('sale', 'storeDetails'));
