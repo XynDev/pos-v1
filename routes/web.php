@@ -3,10 +3,14 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DataFeedController;
 use App\Http\Controllers\Receipt\ReceiptController;
+use App\Livewire\Branch\LocationManagement;
 use App\Livewire\Cashier\Cashier;
 use App\Livewire\Cashier\CashierSessionManagement;
 use App\Livewire\Dashboard\Dashboard;
 use App\Livewire\Inventory\StockOpname;
+use App\Livewire\Inventory\StockTransferCreate;
+use App\Livewire\Inventory\StockTransferDetail;
+use App\Livewire\Inventory\StockTransferList;
 use App\Livewire\Management\CustomerDetail;
 use App\Livewire\Management\CustomerManagement;
 use App\Livewire\Management\RolePermissionManagement;
@@ -19,11 +23,15 @@ use App\Livewire\Product\ProductForm;
 use App\Livewire\Purchase\PurchaseOrderCreate;
 use App\Livewire\Purchase\PurchaseOrderDetail;
 use App\Livewire\Purchase\PurchaseOrderList;
+use App\Livewire\Report\ProfitabilityByBrandReport;
 use App\Livewire\Report\ProfitLossReport;
+use App\Livewire\Report\SalesByCategoryReport;
+use App\Livewire\Report\SalesByCustomerReport;
 use App\Livewire\Report\StockAdjustmentReport;
 use App\Livewire\Report\StockCardReport;
 use App\Livewire\Sale\SaleDetail;
 use App\Livewire\Sale\SaleList;
+use App\Livewire\Settings\ApplicationSettings;
 use App\Livewire\Supplier\ManagementSupplier;
 use Illuminate\Support\Facades\Route;
 
@@ -74,6 +82,16 @@ Route::middleware([
 
     Route::get('/inventory/stock-opname', StockOpname::class)->name('inventory.stock-opname')->middleware('permission:manage-stock-opname');
     Route::get('/reports/stock-adjustments', StockAdjustmentReport::class)->name('reports.stock-adjustments')->middleware('permission:manage-stock-opname');
+    Route::get('/reports/sales-by-category', SalesByCategoryReport::class)->name('reports.sales-by-category')->middleware('permission:view-sales-reports');
+    Route::get('/reports/sales-by-customer', SalesByCustomerReport::class)->name('reports.sales-by-customer')->middleware('permission:view-sales-reports');
+    Route::get('/reports/profitability-by-brand', ProfitabilityByBrandReport::class)->name('reports.profitability-by-brand')->middleware('permission:view-profit-loss-reports');
+
+    Route::get('/settings/application', ApplicationSettings::class)->name('settings.application')->middleware('permission:manage-settings');
+
+    Route::get('/inventory/locations', LocationManagement::class)->name('inventory.locations')->middleware('permission:manage-transfer-stock');
+    Route::get('/inventory/transfers', StockTransferList::class)->name('inventory.transfers.index')->middleware('permission:manage-transfer-stock');
+    Route::get('/inventory/create', StockTransferCreate::class)->name('inventory.transfers.create')->middleware('permission:manage-transfer-stock');
+    Route::get('/inventory/detail/{transfer}', StockTransferDetail::class)->name('inventory.transfers.detail')->middleware('permission:manage-transfer-stock');
 
     // Route for the getting the data feed
     Route::get('/json-data-feed', [DataFeedController::class, 'getDataFeed'])->name('json_data_feed');

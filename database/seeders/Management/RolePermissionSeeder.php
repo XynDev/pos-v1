@@ -80,6 +80,10 @@ class RolePermissionSeeder extends Seeder
             'view-profit-loss-reports',
             'view-product-analysis-reports',
             'view-employee-performance-reports',
+
+            // Setting Application
+            'manage-settings',
+            'manage-transfer-stock',
         ];
 
         foreach ($permissions as $permission) {

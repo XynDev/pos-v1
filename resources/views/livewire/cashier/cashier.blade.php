@@ -1,22 +1,19 @@
-{{--
-    CATATAN:
-    - Halaman ini didesain ulang dengan tata letak dua kolom yang dioptimalkan untuk kasir.
-    - Kolom kiri (Keranjang) dan kanan (Daftar Produk) memiliki gaya yang berbeda untuk memisahkan fungsi.
-    - Semua elemen, termasuk input, tombol, dan kartu produk, telah disesuaikan dengan tema modern.
-    - REVISI: Mengubah h-screen menjadi height kalkulasi untuk mengatasi masalah layout dan scrolling.
---}}
 <div>
-    {{--
-        PERUBAHAN KUNCI: `h-screen` diubah menjadi `style="height: calc(100vh - 4rem);"`
-        Ini membuat kontainer mengisi tinggi layar yang tersisa setelah dikurangi tinggi header (h-16 atau 4rem).
-        Ini akan memperbaiki masalah tumpang tindih dengan sidebar dan scrolling internal.
-    --}}
     <div class="grid grid-cols-12" style="height: calc(100vh - 4rem);">
-
-        {{-- Kolom Kiri: Keranjang & Pembayaran --}}
         <div class="col-span-12 lg:col-span-5 xl:col-span-4 bg-white dark:bg-gray-800 p-4 flex flex-col h-full border-r border-gray-200 dark:border-gray-700/60">
 
-            {{-- Bagian Pelanggan --}}
+            <div class="flex-shrink-0 mb-4 pb-4 border-b">
+                <label for="operating_location" class="block text-sm font-medium text-gray-700">Lokasi Operasional</label>
+                <select wire:model.live="operatingLocationId" id="operating_location" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                    <option value="">Pilih Lokasi</option>
+                    @foreach($locations as $location)
+                        <option value="{{ $location->id }}">{{ $location->name }}</option>
+                    @endforeach
+                </select>
+                @error('operatingLocationId') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+            </div>
+
+            @if($operatingLocationId)
             <div class="flex-shrink-0 mb-4 pb-4 border-b border-gray-200 dark:border-gray-700/60">
                 @if($selectedCustomer)
                     <div class="bg-indigo-50 dark:bg-indigo-900/30 p-3 rounded-lg">
@@ -94,11 +91,16 @@
                     </button>
                 </div>
             </div>
+            @else
+                <div class="text-center text-gray-500 flex-grow flex items-center justify-center">
+                    <p>Pilih lokasi operasional untuk memulai transaksi.</p>
+                </div>
+            @endif
         </div>
 
         {{-- Kolom Kanan: Pencarian Produk --}}
         <div class="col-span-12 lg:col-span-7 xl:col-span-8 bg-gray-50 dark:bg-gray-900/70 p-6 flex flex-col h-full">
-
+            @if($operatingLocationId)
             {{-- Notifikasi --}}
             <div>
                 @if(session()->has('message'))<div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4 rounded-r-md" role="alert"><p>{{ session('message') }}</p></div>@endif
@@ -170,6 +172,11 @@
                     </div>
                 </div>
             </div>
+            @else
+                <div class="text-center text-gray-400 flex-grow flex items-center justify-center h-full">
+                    <p>Pencarian produk akan aktif setelah lokasi dipilih.</p>
+                </div>
+            @endif
         </div>
 
         @if($isPaymentModalOpen) @include('livewire.cashier.cashier-payment-modal') @endif
