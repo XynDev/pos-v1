@@ -19,6 +19,7 @@ use App\Livewire\Product\AttributeManagement;
 use App\Livewire\Product\BrandProduct;
 use App\Livewire\Product\CategoryProduct;
 use App\Livewire\Product\ListProduct;
+use App\Livewire\Product\PrintBarcodeManager;
 use App\Livewire\Product\ProductForm;
 use App\Livewire\Purchase\PurchaseOrderCreate;
 use App\Livewire\Purchase\PurchaseOrderDetail;
@@ -61,6 +62,7 @@ Route::middleware([
     Route::get('/products/{productId}/edit', ProductForm::class)->name('products.edit')->middleware('permission:edit-products');
 
     Route::get('/product-attributes', AttributeManagement::class)->name('attributes.index')->middleware('permission:manage-products');
+    Route::get('/print-barcodes', PrintBarcodeManager::class)->name('barcodes.product')->middleware('permission:manage-products');
 
     Route::get('/suppliers', ManagementSupplier::class)->name('management.suppliers')->middleware('permission:manage-suppliers');
     Route::get('/purchases', PurchaseOrderList::class)->name('purchases.orders')->middleware('permission:create-purchase-orders');

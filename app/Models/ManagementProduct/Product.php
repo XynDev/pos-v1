@@ -27,8 +27,24 @@ class Product extends Model
         'stock',
         'is_active',
         'category_id',
-        'brand_id'
+        'brand_id',
+        'barcode',
+        'internal_code'
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Otomatis buat kode internal unik saat produk baru dibuat
+        static::creating(static function ($product) {
+            if (empty($product->internal_code)) {
+                $lastProduct = static::orderBy('id', 'desc')->first();
+                $nextId = $lastProduct ? $lastProduct->id + 1 : 1;
+                $product->internal_code = 'PRODUCT-' . date('Y') . '-' . str_pad($nextId, 5, '0', STR_PAD_LEFT);
+            }
+        });
+    }
 
     public function category(): BelongsTo
     {
