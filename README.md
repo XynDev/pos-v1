@@ -1,61 +1,111 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+<div align="center">
+  <h1 align="center">XYN POS v1</h1>
+  <p align="center">
+    A powerful, open-source Point of Sales (POS) system built with the TALL stack (Tailwind, Alpine.js, Laravel, Livewire).
+  </p>
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+  <p align="center">
+    <a href="https://github.com/XynDev/pos-v1/stargazers"><img src="https://img.shields.io/github/stars/XynDev/pos-v1?style=for-the-badge" alt="Stars"></a>
+    <a href="https://github.com/XynDev/pos-v1/network/members"><img src="https://img.shields.io/github/forks/XynDev/pos-v1?style=for-the-badge" alt="Forks"></a>
+    <a href="https://github.com/XynDev/pos-v1/issues"><img src="https://img.shields.io/github/issues/XynDev/pos-v1?style=for-the-badge" alt="Issues"></a>
+    <a href="https://github.com/XynDev/pos-v1/blob/main/LICENSE"><img src="https://img.shields.io/github/license/XynDev/pos-v1?style=for-the-badge" alt="License"></a>
+  </p>
+</div>
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 🎯 About The Project
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+XYN POS is designed to be a modern, intuitive, and feature-rich Point of Sales application, perfect for small to medium-sized businesses. Built on top of the robust Laravel framework and the dynamic Livewire, it provides a seamless, single-page-app-like experience without complex JavaScript frameworks.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+This project aims to provide a reliable, open-source alternative that developers can easily install, customize, and deploy for their clients or their own businesses.
 
-## Learning Laravel
+### ✨ Key Features
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+* **Product Management:** Easily add, edit, and categorize products.
+* **Dynamic POS Interface:** A fast and responsive cashier interface for processing transactions.
+* **Order & Transaction History:** Track all sales and review past orders.
+* **User & Role Management:** Built-in user authentication and authorization using Laravel Jetstream & Spatie Permissions.
+* **Customer Management:** Keep a record of your customers.
+* **Simple & Clean UI:** A clean user interface built with Tailwind CSS.
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+### 🛠️ Tech Stack
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+This project is built with a modern tech stack:
+* [Laravel](https://laravel.com/)
+* [Livewire](https://laravel-livewire.com/)
+* [Alpine.js](https://alpinejs.dev/)
+* [Tailwind CSS](https://tailwindcss.com/)
+* [Laravel Jetstream](https://jetstream.laravel.com/)
+* [Spatie/laravel-permission](https://spatie.be/docs/laravel-permission/v1/introduction)
 
-## Laravel Sponsors
+---
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### 🚀 Getting Started
 
-### Premium Partners
+Follow these steps to get a local copy up and running.
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+#### Prerequisites
+* PHP >= 8.1
+* Composer
+* Node.js & NPM
+* A database (e.g., MySQL, PostgreSQL)
 
-## Contributing
+#### Installation
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+1.  **Clone the repository**
+    ```sh
+    git clone [https://github.com/XynDev/pos-v1.git](https://github.com/XynDev/pos-v1.git)
+    cd pos-v1
+    ```
 
-## Code of Conduct
+2.  **Install dependencies**
+    ```sh
+    composer install
+    npm install
+    ```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+3.  **Setup environment file**
+    ```sh
+    cp .env.example .env
+    ```
+    Then, open the `.env` file and configure your database connection (`DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`).
 
-## Security Vulnerabilities
+4.  **Generate application key**
+    ```sh
+    php artisan key:generate
+    ```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+5.  **Run database migrations and seeders**
+    ```sh
+    php artisan migrate --seed
+    ```
 
-## License
+6.  **Build assets**
+    ```sh
+    npm run dev
+    ```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+7.  **Run the development server**
+    ```sh
+    php artisan serve
+    ```
+    Your application should now be running on `http://127.0.0.1:8000`.
+
+---
+
+## ❤️ Supporting the Project
+
+XYN POS is a free, open-source project. Its ongoing development is made possible thanks to the support of our amazing backers.
+
+If you find this project useful, please consider [**becoming a sponsor**](https://github.com/sponsors/XynDev) to help us continue our mission.
+
+### Our Sponsors
+
+<a href="https://github.com/sponsors/XynDev"><img src="https://opencollective.com/laradock/sponsors.svg?width=890"></a>
+
+A huge thank you to all our backers! You can see the full list of our wonderful supporters in our [**`BACKERS.md` file**](BACKERS.md).
+
+---
+
+##
